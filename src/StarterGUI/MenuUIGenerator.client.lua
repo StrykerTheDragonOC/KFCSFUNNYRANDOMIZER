@@ -333,14 +333,15 @@ end
 
 -- Create Gamemode Voting Panel
 function MenuGenerator:CreateGamemodeVotingPanel(deploySection)
-	-- Voting panel container (hidden by default)
+	-- Voting panel container (hidden by default) - positioned properly in center
 	local votingPanel = Instance.new("Frame")
 	votingPanel.Name = "VotingPanel"
-	votingPanel.Size = UDim2.new(1, -40, 0, 200)
-	votingPanel.Position = UDim2.new(0, 20, 0.7, 0)
+	votingPanel.Size = UDim2.new(0, 600, 0, 250)
+	votingPanel.Position = UDim2.new(0.5, -300, 0.5, -125) -- Centered
 	votingPanel.BackgroundColor3 = Color3.fromRGB(20, 25, 30)
 	votingPanel.BorderSizePixel = 0
 	votingPanel.Visible = false -- Hidden until voting starts
+	votingPanel.ZIndex = 10 -- Ensure it's on top
 	votingPanel.Parent = deploySection
 
 	local corner = Instance.new("UICorner")
@@ -365,7 +366,7 @@ function MenuGenerator:CreateGamemodeVotingPanel(deploySection)
 	timeLabel.Name = "TimeLabel"
 	timeLabel.Size = UDim2.new(0, 100, 0, 30)
 	timeLabel.Position = UDim2.new(1, -110, 0, 10)
-	votingPanel.BackgroundTransparency = 1
+	timeLabel.BackgroundTransparency = 1
 	timeLabel.Text = "30s"
 	timeLabel.TextColor3 = COLORS.TextDim
 	timeLabel.Font = Enum.Font.GothamBold

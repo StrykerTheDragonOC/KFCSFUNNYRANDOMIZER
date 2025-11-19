@@ -661,13 +661,30 @@ function ViewmodelSystem:LoadViewmodelAnimations(weaponName, weaponConfig)
 		animator.Parent = animController
 	end
 
-	-- Load all animations
+	-- Load all animations and store tracks
+	local animationTracks = {}
 	for _, anim in pairs(weaponAnimFolder:GetChildren()) do
 		if anim:IsA("Animation") then
 			local track = animator:LoadAnimation(anim)
+			animationTracks[anim.Name] = track
 			print("✓ Loaded animation: " .. anim.Name)
-			-- Store animation track if needed
 		end
+	end
+
+	-- Auto-play Idle animation if it exists
+	if animationTracks.Idle then
+		animationTracks.Idle.Looped = true
+		animationTracks.Idle:Play()
+		print("✓ Playing Idle animation for " .. weaponName)
+	else
+		print("⚠ No Idle animation found for " .. weaponName)
+	end
+
+	-- Store animation tracks globally for weapon scripts to access
+	if not activeViewmodel:FindFirstChild("AnimationTracks") then
+		local tracksValue = Instance.new("Folder")
+		tracksValue.Name = "AnimationTracks"
+		tracksValue.Parent = activeViewmodel
 	end
 
 	print("✓ Loaded animations for " .. weaponName)

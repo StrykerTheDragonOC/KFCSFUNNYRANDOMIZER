@@ -97,7 +97,7 @@ local DEFAULT_PLAYER_DATA = {
 	-- Core Progression
 	Level = 0,
 	XP = 0,
-	Credits = 200, -- Starting credits for rank 0
+	Credits = 150, -- Starting credits for rank 0
 	
 	-- Comprehensive Stats
 	Stats = {

@@ -49,6 +49,8 @@ function InGameHUD:CreateHUD()
 		hudScreenGui.ResetOnSpawn = false
 		hudScreenGui.DisplayOrder = 5
 		hudScreenGui.IgnoreGuiInset = true
+		hudScreenGui.Enabled = false  -- Start hidden until deployed
+		print("✓ Reusing existing InGameHUD (hidden by default)")
 	else
 		-- Create ScreenGui
 		hudScreenGui = Instance.new("ScreenGui")
@@ -56,7 +58,9 @@ function InGameHUD:CreateHUD()
 		hudScreenGui.ResetOnSpawn = false
 		hudScreenGui.DisplayOrder = 5
 		hudScreenGui.IgnoreGuiInset = true
+		hudScreenGui.Enabled = false  -- Start hidden until deployed
 		hudScreenGui.Parent = playerGui
+		print("✓ Created new InGameHUD (hidden by default)")
 	end
 
 	-- Main container
@@ -754,8 +758,8 @@ function InGameHUD:Initialize()
 		local armor = player:GetAttribute("Armor") or 0
 		self:UpdateArmor(armor, 100)
 
-		-- Show HUD when in game
-		self:Show()
+		-- DON'T auto-show HUD here - wait for deployment event
+		-- HUD will be shown by DeploymentSuccessful event
 	end
 
 	if player.Character then

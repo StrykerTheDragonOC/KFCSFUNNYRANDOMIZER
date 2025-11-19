@@ -167,18 +167,24 @@ function ViewmodelSystem:LockFirstPerson()
 end
 
 function ViewmodelSystem:UnlockFirstPerson()
-	if not isFirstPersonLocked then return end
-
+	-- Always try to unlock, even if we think it's already unlocked (safety)
 	isFirstPersonLocked = false
 	fpsWeaponEquipped = false
 
 	-- Enhanced unlock with multiple retry attempts
 	local function attemptUnlock()
-		player.CameraMode = Enum.CameraMode.Classic
-		player.CameraMaxZoomDistance = originalMaxZoomDistance or 400
-		player.CameraMinZoomDistance = 0.5
-		UserInputService.MouseBehavior = Enum.MouseBehavior.Default
-		Camera.FieldOfView = 70
+		pcall(function()
+			player.CameraMode = Enum.CameraMode.Classic
+			player.CameraMaxZoomDistance = originalMaxZoomDistance or 400
+			player.CameraMinZoomDistance = 0.5
+			UserInputService.MouseBehavior = Enum.MouseBehavior.Default
+			Camera.FieldOfView = 70
+			
+			-- Extra: Reset camera subject if needed
+			if Camera.CameraSubject ~= player.Character.Humanoid then
+				Camera.CameraSubject = player.Character.Humanoid
+			end
+		end)
 	end
 
 	-- First attempt
@@ -362,8 +368,11 @@ end
 
 -- Tool unequipped handler
 function ViewmodelSystem:OnToolUnequipped(tool)
+	-- Check if this tool uses FPS system (has weapon config OR has FPSWeapon attribute)
 	local weaponConfig = WeaponConfig:GetWeaponConfig(tool.Name)
-	if weaponConfig then
+	local isFPSTool = weaponConfig or tool:GetAttribute("FPSWeapon") == true
+	
+	if isFPSTool then
 		-- Restore tool handle visibility
 		local handle = tool:FindFirstChild("Handle")
 		if handle and handle:IsA("BasePart") then
@@ -375,35 +384,46 @@ function ViewmodelSystem:OnToolUnequipped(tool)
 		-- Remove viewmodel first
 		self:RemoveViewmodel()
 
-		-- Then unlock first person with safety: only unlock if no other FPS weapon is still equipped
+		-- Then unlock first person with safety: only unlock if no other FPS weapon/tool is still equipped
 		task.spawn(function()
-			task.wait(0.05) -- Small delay to ensure tool fully unequipped
+			task.wait(0.1) -- Small delay to ensure tool fully unequipped
 			local character = player.Character
 			local stillHasFPS = false
 			if character then
 				for _, child in pairs(character:GetChildren()) do
-					if child:IsA("Tool") then
+					if child:IsA("Tool") and child ~= tool then
+						-- Check if it's an FPS weapon or FPS tool
 						local cfg = WeaponConfig:GetWeaponConfig(child.Name)
-						if cfg then
+						local isFPS = cfg or child:GetAttribute("FPSWeapon") == true
+						if isFPS then
 							stillHasFPS = true
+							print("Another FPS tool still equipped:", child.Name)
 							break
 						end
 					end
 				end
 			end
+			
 			if not stillHasFPS then
 				self:UnlockFirstPerson()
+				print("✓ No FPS tools equipped, camera unlocked")
 			else
-				print("Keeping first-person lock because another FPS weapon is equipped")
+				print("Keeping first-person lock because another FPS tool is equipped")
 			end
 		end)
 
 		-- Notify ScopeSystem about weapon unequipped
 		if ScopeSystem and ScopeSystem.OnWeaponUnequipped then
-			ScopeSystem:OnWeaponUnequipped()
+			pcall(function()
+				ScopeSystem:OnWeaponUnequipped()
+			end)
 		end
 
-		print("✓ Tool unequipped, camera should unlock")
+		print("✓ FPS tool unequipped:", tool.Name)
+	else
+		-- Non-FPS tool, make sure camera is unlocked
+		print("Non-FPS tool unequipped:", tool.Name, "- ensuring camera is free")
+		self:UnlockFirstPerson()
 	end
 end
 

@@ -1259,58 +1259,81 @@ function MenuGenerator:SetupViewportCharacter(screenGui)
 
 	if not viewportFrame then
 		print("⚠ ViewportFrame not found in menu (searched DeploySection, ContentArea, and ScreenGui)")
+		print("→ Skipping viewport character setup (no ViewportFrame in rbxm)")
 		return
 	end
 
 	print("✓ Found ViewportFrame at:", viewportFrame:GetFullName())
 
 	-- CRITICAL FIX: Remove any UI elements that don't belong in ViewportFrame
-	-- ViewportFrame should ONLY contain: Camera and R6 character model
+	-- ViewportFrame should ONLY contain: Camera, character models, and props
+	local misplacedElements = {}
 	for _, child in pairs(viewportFrame:GetChildren()) do
-		if child:IsA("TextLabel") or child:IsA("TextButton") or child:IsA("Frame") or child:IsA("ImageLabel") then
-			warn("⚠ Removing misplaced UI element from ViewportFrame:", child.Name)
-
-			-- Try to move it to DeploySection if it belongs there
-			if deploySection and (child.Name == "DeployButton" or child.Name == "GameTitle" or child.Name == "Hint" or child.Name == "MenuTitle") then
-				print("  → Moving", child.Name, "to DeploySection")
-				child.Parent = deploySection
-			else
-				print("  → Destroying", child.Name)
-				child:Destroy()
-			end
+		if child:IsA("TextLabel") or child:IsA("TextButton") or child:IsA("Frame") or child:IsA("ImageLabel") or child:IsA("ScrollingFrame") then
+			table.insert(misplacedElements, child)
+		end
+	end
+	
+	for _, element in ipairs(misplacedElements) do
+		warn("⚠ Removing misplaced UI element from ViewportFrame:", element.Name)
+		-- Try to move it to DeploySection if it belongs there
+		if deploySection and (element.Name == "DeployButton" or element.Name == "GameTitle" or element.Name == "Hint" or element.Name == "MenuTitle") then
+			print("  → Moving", element.Name, "to DeploySection")
+			element.Parent = deploySection
+		else
+			print("  → Removing", element.Name, "from ViewportFrame")
+			element.Parent = nil -- Remove but don't destroy in case it's referenced
 		end
 	end
 
-    -- Find the R6 character model (could be named Background, R6, or just Model)
-    local characterModel = viewportFrame:FindFirstChild("Background")
-        or viewportFrame:FindFirstChild("R6")
-        or viewportFrame:FindFirstChild("KFC")
-        or viewportFrame:FindFirstChildWhichIsA("Model")
+    -- Find the R6 character model - search for any Model with a Humanoid
+    local characterModel = nil
+    local desk = nil
+    
+    -- First pass: find models with humanoids (character)
+    for _, child in pairs(viewportFrame:GetChildren()) do
+    	if child:IsA("Model") and child:FindFirstChildOfClass("Humanoid") then
+    		characterModel = child
+    		print("✓ Found character model:", characterModel.Name)
+    		break
+    	end
+    end
+    
+    -- Second pass: find other models (desk/props)
+    for _, child in pairs(viewportFrame:GetChildren()) do
+    	if child:IsA("Model") and child ~= characterModel then
+    		desk = child
+    		print("✓ Found prop/desk model:", desk.Name)
+    		-- Make sure desk parts are properly configured
+    		for _, part in ipairs(desk:GetDescendants()) do
+    			if part:IsA("BasePart") then
+    				part.Anchored = true
+    				part.CanCollide = false
+    			end
+    		end
+    	end
+    end
 
 	if not characterModel then
-		print("⚠ Character model not found in ViewportFrame")
+		print("⚠ No character model found in ViewportFrame")
+		print("→ Expected a Model with a Humanoid inside ViewportFrame")
 		return
 	end
-
-	print("✓ Found character model:", characterModel.Name)
 
 	-- Find humanoid
 	local humanoid = characterModel:FindFirstChildOfClass("Humanoid")
 
 	if not humanoid then
-		print("⚠ Humanoid not found in character model")
+		warn("⚠ Humanoid not found in character model")
 		return
 	end
 
-    -- Ensure any prop/desk under the character is visible
-    local desk = viewportFrame:FindFirstChild("Desk") or viewportFrame:FindFirstChild("WoodenDesk") or viewportFrame:FindFirstChild("Table")
-    if desk and desk:IsA("Model") then
-        for _, part in ipairs(desk:GetDescendants()) do
-            if part:IsA("BasePart") then
-                part.Anchored = true
-                part.CanCollide = false
-            end
-        end
+    -- Ensure all character parts are properly set up
+    for _, part in ipairs(characterModel:GetDescendants()) do
+    	if part:IsA("BasePart") then
+    		part.Anchored = true
+    		part.CanCollide = false
+    	end
     end
 
     -- Setup camera for viewport
@@ -1321,30 +1344,37 @@ function MenuGenerator:SetupViewportCharacter(screenGui)
 	end
 	viewportFrame.CurrentCamera = camera
 
-	-- Position camera to view the character
+	-- Position camera to view the character (and desk if present)
     local rootPart = characterModel:FindFirstChild("HumanoidRootPart") or characterModel:FindFirstChild("Torso")
     if rootPart then
-        -- Try to frame both character and desk by using bounding box when possible
+        -- Calculate optimal camera position
         local cf, size = characterModel:GetBoundingBox()
-        if desk and desk:IsA("Model") then
-            local dcf, dsize = desk:GetBoundingBox()
-            local minPos = Vector3.new(
-                math.min(cf.Position.X, dcf.Position.X),
-                math.min(cf.Position.Y, dcf.Position.Y),
-                math.min(cf.Position.Z, dcf.Position.Z)
+        local camTarget = cf.Position
+        local camDistance = 8 -- Default distance
+        
+        -- If we have a desk, frame both character and desk
+        if desk then
+            local deskCF, deskSize = desk:GetBoundingBox()
+            -- Calculate combined bounding box
+            local minBounds = Vector3.new(
+                math.min(cf.Position.X - size.X/2, deskCF.Position.X - deskSize.X/2),
+                math.min(cf.Position.Y - size.Y/2, deskCF.Position.Y - deskSize.Y/2),
+                math.min(cf.Position.Z - size.Z/2, deskCF.Position.Z - deskSize.Z/2)
             )
-            local maxPos = Vector3.new(
-                math.max(cf.Position.X, dcf.Position.X),
-                math.max(cf.Position.Y, dcf.Position.Y),
-                math.max(cf.Position.Z, dcf.Position.Z)
+            local maxBounds = Vector3.new(
+                math.max(cf.Position.X + size.X/2, deskCF.Position.X + deskSize.X/2),
+                math.max(cf.Position.Y + size.Y/2, deskCF.Position.Y + deskSize.Y/2),
+                math.max(cf.Position.Z + size.Z/2, deskCF.Position.Z + deskSize.Z/2)
             )
-            local center = (minPos + maxPos) * 0.5
-            local extents = (maxPos - minPos)
-            local dist = math.max(extents.X, extents.Y, extents.Z) * 1.8
-            camera.CFrame = CFrame.new(center + Vector3.new(0, extents.Y * 0.2, dist), center)
-        else
-            camera.CFrame = CFrame.new(rootPart.Position + Vector3.new(0, 1, 5), rootPart.Position + Vector3.new(0, 1, 0))
+            local extents = maxBounds - minBounds
+            camTarget = (minBounds + maxBounds) / 2
+            camDistance = math.max(extents.X, extents.Y, extents.Z) * 1.5
         end
+        
+        -- Position camera at an angle
+        local camOffset = Vector3.new(camDistance * 0.6, camDistance * 0.3, camDistance * 0.8)
+        camera.CFrame = CFrame.new(camTarget + camOffset, camTarget)
+        print("✓ Camera positioned for viewport")
     end
 
 	-- Find and play idle animation
@@ -1354,40 +1384,49 @@ function MenuGenerator:SetupViewportCharacter(screenGui)
 		animator.Parent = humanoid
 	end
 
-	-- Look for animation in the model
-	local animSaves = characterModel:FindFirstChild("AnimSaves")
-	local idleAnim = animSaves and animSaves:FindFirstChildOfClass("Animation")
-
-	if not idleAnim then
-		-- Try to find any Animation instance in the model
+	-- Look for animation in the model - search thoroughly
+	local idleAnim = characterModel:FindFirstChild("AnimSaves", true)
+	if idleAnim and idleAnim:IsA("Folder") then
+		idleAnim = idleAnim:FindFirstChildOfClass("Animation")
+	elseif not (idleAnim and idleAnim:IsA("Animation")) then
 		idleAnim = characterModel:FindFirstChild("Animation", true)
 	end
 
-	if idleAnim then
-		local animTrack = animator:LoadAnimation(idleAnim)
-		animTrack.Looped = true
-		animTrack:Play()
-		print("✓ Playing idle animation in ViewportFrame")
+	if idleAnim and idleAnim:IsA("Animation") then
+		local success, err = pcall(function()
+			local animTrack = animator:LoadAnimation(idleAnim)
+			animTrack.Looped = true
+			animTrack:Play()
+			print("✓ Playing idle animation:", idleAnim.AnimationId)
+		end)
+		if not success then
+			warn("Failed to play animation:", err)
+		end
 	else
-		print("⚠ No idle animation found for character")
+		print("⚠ No idle animation found for character (this is optional)")
 	end
 
 	-- Slowly rotate the character for visual effect
 	local RunService = game:GetService("RunService")
 	local connection
 	connection = RunService.RenderStepped:Connect(function(dt)
-		if not characterModel.Parent or not screenGui.Parent then
+		if not characterModel or not characterModel.Parent or not screenGui.Parent then
 			connection:Disconnect()
 			return
 		end
 
 		if rootPart and rootPart.Parent then
 			-- Slowly rotate character
-			rootPart.CFrame = rootPart.CFrame * CFrame.Angles(0, math.rad(15 * dt), 0)
+			pcall(function()
+				rootPart.CFrame = rootPart.CFrame * CFrame.Angles(0, math.rad(15 * dt), 0)
+			end)
 		end
 	end)
 
-	print("✓ ViewportFrame character setup complete")
+	print("✓ ViewportFrame character setup complete!")
+	print("  - Character:", characterModel.Name)
+	print("  - Desk/Props:", desk and desk.Name or "None")
+	print("  - Animation:", idleAnim and "Playing" or "None")
 end
 
 -- Generate complete menu

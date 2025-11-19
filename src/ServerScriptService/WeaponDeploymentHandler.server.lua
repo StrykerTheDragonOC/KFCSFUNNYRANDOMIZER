@@ -17,9 +17,10 @@ local playerLoadouts = {} -- [player] = {primary = "G36", secondary = "M9", mele
 -- Default loadout
 local defaultLoadout = {
     primary = "G36",
-    secondary = "M9", 
+    secondary = "M9",
     melee = "PocketKnife",
-    grenade = "M67"
+    grenade = "M67",
+    special = nil  -- Special weapons are optional
 }
 
 -- Get player's selected loadout
@@ -137,8 +138,8 @@ local function GiveWeaponsToPlayer(player)
         end
     end
     
-    -- Give weapons in order: Primary, Secondary, Melee, Grenade
-    local weaponOrder = {"primary", "secondary", "melee", "grenade"}
+    -- Give weapons in order: Primary, Secondary, Melee, Grenade, Special
+    local weaponOrder = {"primary", "secondary", "melee", "grenade", "special"}
     
     -- Dedupe melees: ensure only one melee is granted
     local seenMelee = false
@@ -234,12 +235,11 @@ end
 local function OnCharacterAdded(character)
     local player = Players:GetPlayerFromCharacter(character)
     if not player then return end
-    
-    -- If player is deployed, give weapons after respawn
-    if player.Team and player.Team ~= nil then
-        wait(1) -- Wait for character to be ready
-        GiveWeaponsToPlayer(player)
-    end
+
+    -- Give weapons after respawn (including Lobby team for testing)
+    -- This allows players to test weapons in the menu/lobby before deploying
+    wait(1) -- Wait for character to be ready
+    GiveWeaponsToPlayer(player)
 end
 
 -- Initialize

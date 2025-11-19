@@ -45,37 +45,52 @@ end
 
 function LeaderboardHandler:UpdateLeaderboardCache()
     local leaderboardData = {}
-    
-    -- Get data for all players
+
+    -- Get data for all players (CURRENT MATCH STATS ONLY)
     for _, player in pairs(Players:GetPlayers()) do
         local playerData = DataStoreManager:GetPlayerData(player)
-        if playerData then
+        if playerData and playerData.MatchStats then
+            -- Use MATCH STATS for Tab leaderboard (current round only)
+            local matchStats = playerData.MatchStats
             local kdr = 0
-            if playerData.deaths and playerData.deaths > 0 then
-                kdr = playerData.kills / playerData.deaths
-            elseif playerData.kills and playerData.kills > 0 then
-                kdr = playerData.kills
+            if matchStats.Deaths and matchStats.Deaths > 0 then
+                kdr = matchStats.Kills / matchStats.Deaths
+            elseif matchStats.Kills and matchStats.Kills > 0 then
+                kdr = matchStats.Kills
             end
-            
+
+            -- Get player's team
+            local team = "Lobby"
+            if player.Team then
+                team = player.Team.Name
+            end
+
             table.insert(leaderboardData, {
                 name = player.Name,
-                level = playerData.level or 1,
-                kills = playerData.kills or 0,
-                deaths = playerData.deaths or 0,
+                level = playerData.Level or 0,
+                kills = matchStats.Kills or 0,
+                deaths = matchStats.Deaths or 0,
                 kdr = kdr,
-                score = playerData.score or 0,
-                team = playerData.team or "Lobby"
+                streak = matchStats.KillStreak or 0,
+                score = matchStats.Score or 0,
+                team = team
             })
         else
-            -- Fallback data for players without data
+            -- Fallback data for players without data (current match is 0)
+            local team = "Lobby"
+            if player.Team then
+                team = player.Team.Name
+            end
+
             table.insert(leaderboardData, {
                 name = player.Name,
-                level = 1,
+                level = 0,
                 kills = 0,
                 deaths = 0,
                 kdr = 0,
+                streak = 0,
                 score = 0,
-                team = "Lobby"
+                team = team
             })
         end
     end

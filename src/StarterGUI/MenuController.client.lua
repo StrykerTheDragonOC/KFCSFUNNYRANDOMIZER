@@ -394,7 +394,15 @@ function MenuController:SelectWeapon(weaponName, category)
 		self:PopulateLoadoutSection(loadoutSection)
 	end
 
-	-- TODO: Send to server to save loadout
+	-- Automatically update loadout on server
+	local loadoutChangedEvent = ReplicatedStorage.FPSSystem.RemoteEvents:FindFirstChild("LoadoutChanged")
+	if loadoutChangedEvent then
+		-- Send updated loadout to server
+		loadoutChangedEvent:FireServer(playerLoadout)
+		print("✓ Loadout auto-updated on server:", category, "=", weaponName)
+	else
+		warn("LoadoutChanged event not found - loadout not saved to server")
+	end
 end
 
 -- Show Settings section

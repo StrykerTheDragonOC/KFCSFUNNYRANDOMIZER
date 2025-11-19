@@ -324,8 +324,9 @@ function MenuGenerator:CreateDeploySection(parent)
 		end
 	end
 
-	-- Add gamemode voting panel
-	self:CreateGamemodeVotingPanel(section)
+	-- NOTE: Voting panel UI should be created manually in Studio via MCP
+	-- The voting logic will use the existing VotingPanel if it exists in the RBXM
+	-- self:CreateGamemodeVotingPanel(section) -- REMOVED - Create in Studio instead
 
 	return section
 end

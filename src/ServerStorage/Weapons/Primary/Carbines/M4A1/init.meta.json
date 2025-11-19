@@ -1,0 +1,9 @@
+{
+	"className": "Tool",
+	"properties": {
+		"Name": "M4A1",
+		"CanBeDropped": false,
+		"ManualActivationOnly": true,
+		"RequiresHandle": false
+	}
+}

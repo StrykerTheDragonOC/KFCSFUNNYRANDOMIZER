@@ -166,12 +166,13 @@ function PerkSystem:Initialize()
 end
 
 function PerkSystem:LoadPlayerPerks()
-    -- Initialize with no unlocked perks by default
+    -- Initialize with double_jump unlocked by default (free perk)
     -- This would normally load from server/datastore
-    playerPerks.unlockedPerks = {}
+    playerPerks.unlockedPerks = {
+        double_jump = true  -- Free default perk
+    }
 
-    -- For testing, unlock the first movement perk
-    -- playerPerks.unlockedPerks.double_jump = true
+    print("✓ PerkSystem: Double Jump unlocked by default")
 end
 
 function PerkSystem:GetAvailablePerks()

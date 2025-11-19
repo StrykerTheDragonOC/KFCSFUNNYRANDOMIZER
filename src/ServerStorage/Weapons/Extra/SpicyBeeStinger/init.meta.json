@@ -1,0 +1,9 @@
+{
+  "className": "Tool",
+  "properties": {
+    "Name": "SpicyBeeStinger",
+    "ToolTip": "Spicy Bee Stinger - Poison & Mobility",
+    "CanBeDropped": false,
+    "RequiresHandle": true
+  }
+}

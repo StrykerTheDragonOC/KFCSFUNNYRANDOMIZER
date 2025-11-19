@@ -1,0 +1,59 @@
+<roblox xmlns:xmime="http://www.w3.org/2005/05/xmlmime" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="http://www.roblox.com/roblox.xsd" version="4">
+	<Item class="Part" referent="RBX0">
+		<Properties>
+			<string name="Name">Handle</string>
+			<Vector3 name="size">
+				<X>0.4</X>
+				<Y>0.4</Y>
+				<Z>3</Z>
+			</Vector3>
+			<Color3 name="Color3uint8">4294934528</Color3>
+			<CoordinateFrame name="CFrame">
+				<X>0</X>
+				<Y>0</Y>
+				<Z>0</Z>
+				<R00>1</R00>
+				<R01>0</R01>
+				<R02>0</R02>
+				<R10>0</R10>
+				<R11>1</R11>
+				<R12>0</R12>
+				<R20>0</R20>
+				<R21>0</R21>
+				<R22>1</R22>
+			</CoordinateFrame>
+			<token name="Material">272</token>
+			<bool name="Anchored">false</bool>
+			<bool name="CanCollide">false</bool>
+			<bool name="CanTouch">true</bool>
+			<bool name="CanQuery">true</bool>
+		</Properties>
+		<Item class="SpecialMesh" referent="RBX1">
+			<Properties>
+				<string name="Name">Mesh</string>
+				<token name="MeshType">1</token>
+				<Vector3 name="Scale">
+					<X>1</X>
+					<Y>1</Y>
+					<Z>1</Z>
+				</Vector3>
+			</Properties>
+		</Item>
+		<Item class="Sound" referent="RBX2">
+			<Properties>
+				<string name="Name">SlashSound</string>
+				<token name="RollOffMode">0</token>
+				<float name="Volume">0.5</float>
+				<Content name="SoundId"><url>rbxasset://sounds/swordslash.wav</url></Content>
+			</Properties>
+		</Item>
+		<Item class="Sound" referent="RBX3">
+			<Properties>
+				<string name="Name">DashSound</string>
+				<token name="RollOffMode">0</token>
+				<float name="Volume">0.5</float>
+				<Content name="SoundId"><url>rbxasset://sounds/electronicpingshort.wav</url></Content>
+			</Properties>
+		</Item>
+	</Item>
+</roblox>

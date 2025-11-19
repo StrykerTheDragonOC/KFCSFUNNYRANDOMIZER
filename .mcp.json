@@ -1,0 +1,8 @@
+{
+  "mcpServers": {
+    "roblox-studio": {
+      "command": "cmd",
+      "args": ["/c", "npx", "-y", "robloxstudio-mcp"]
+    }
+  }
+}

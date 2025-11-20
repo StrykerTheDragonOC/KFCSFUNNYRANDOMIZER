@@ -82,22 +82,23 @@ local function CreateWeaponTool(weaponName, weaponType)
         return nil
     end
 
-    -- Find the tool script (try ServerScript.server, ServerScript, or LocalScript for client-only tools)
-    local toolScript = weaponFolder:FindFirstChild("ServerScript.server") or
-                      weaponFolder:FindFirstChild("ServerScript") or
-                      weaponFolder:FindFirstChild("LocalScript.client") or
-                      weaponFolder:FindFirstChild("LocalScript")
+    -- Find scripts (server-side and/or client-side)
+    local serverScript = weaponFolder:FindFirstChild("ServerScript.server") or
+                        weaponFolder:FindFirstChild("ServerScript")
+    local clientScript = weaponFolder:FindFirstChild("LocalScript.client") or
+                        weaponFolder:FindFirstChild("LocalScript")
 
-    if not toolScript then
-        warn("Tool script not found for: " .. weaponName .. " (checked ServerScript.server, ServerScript, LocalScript.client, and LocalScript)")
+    -- Melee and Grenades typically only have client scripts, which is fine
+    if not serverScript and not clientScript then
+        warn("No scripts found for: " .. weaponName .. " (checked ServerScript.server, ServerScript, LocalScript.client, and LocalScript)")
         return nil
     end
-    
+
     -- Create the tool
     local tool = Instance.new("Tool")
     tool.Name = weaponName
     tool.RequiresHandle = true
-    
+
     -- Create handle (invisible for viewmodel weapons)
     local handle = Instance.new("Part")
     handle.Name = "Handle"
@@ -108,11 +109,21 @@ local function CreateWeaponTool(weaponName, weaponType)
     handle.TopSurface = Enum.SurfaceType.Smooth
     handle.BottomSurface = Enum.SurfaceType.Smooth
     handle.Parent = tool
-    
-    -- Clone and parent the script
-    local clonedScript = toolScript:Clone()
-    clonedScript.Parent = tool
-    
+
+    -- Clone and parent server script if it exists
+    if serverScript then
+        local clonedServerScript = serverScript:Clone()
+        clonedServerScript.Parent = tool
+    end
+
+    -- Clone and parent client script if it exists
+    if clientScript then
+        local clonedClientScript = clientScript:Clone()
+        clonedClientScript.Parent = tool
+    end
+
+    print("✓ Created tool: " .. weaponName .. " (Server: " .. tostring(serverScript ~= nil) .. ", Client: " .. tostring(clientScript ~= nil) .. ")")
+
     return tool
 end
 

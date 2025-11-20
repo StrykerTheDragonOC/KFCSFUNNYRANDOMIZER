@@ -12,6 +12,40 @@ local PickupHandler = {}
 local activePickups = {} -- [pickupId] = {type, position, spawnTime, respawnTime, spawnPoint}
 local pickupSpawnPoints = {} -- Spawn point parts found in workspace/ServerStorage
 
+-- Normalize pickup type names (convert PascalCase/camelCase to spaced names)
+local function NormalizePickupType(pickupType)
+	-- Common mappings for pickup types
+	local nameMap = {
+		["HealthPack"] = "Health Pack",
+		["MedicalKit"] = "Medical Kit",
+		["Adrenaline"] = "Adrenaline",
+		["LightArmor"] = "Light Armor",
+		["HeavyArmor"] = "Heavy Armor",
+		["RiotArmor"] = "Riot Armor",
+		["PistolAmmo"] = "Pistol Ammo",
+		["RifleAmmo"] = "Rifle Ammo",
+		["SniperAmmo"] = "Sniper Ammo",
+		["ShotgunShells"] = "Shotgun Shells",
+		["NVG"] = "Night Vision",
+		["NightVision"] = "Night Vision",
+		["ThermalScope"] = "Thermal Scope",
+		["GhillieSuit"] = "Ghillie Suit",
+		["SpeedBoost"] = "Speed Boost",
+		["DamageBoost"] = "Damage Boost",
+		["ShieldGenerator"] = "Shield Generator",
+	}
+
+	-- Check if we have a direct mapping
+	if nameMap[pickupType] then
+		return nameMap[pickupType]
+	end
+
+	-- If no mapping, try to insert spaces before capital letters (PascalCase to spaced)
+	-- e.g., "HealthPack" -> "Health Pack"
+	local normalized = pickupType:gsub("(%l)(%u)", "%1 %2")
+	return normalized
+end
+
 function PickupHandler:Initialize()
 	
 	-- Handle pickup requests from clients
@@ -59,20 +93,23 @@ function PickupHandler:LoadSpawnPoints()
 				-- Extract pickup type from part name
 				local pickupType = child.Name:gsub("^PickupSpawn_", "")
 
+				-- Normalize the pickup type (convert PascalCase to spaced names)
+				local normalizedType = NormalizePickupType(pickupType)
+
 				-- Validate pickup type exists in configs
-				local config = self:GetPickupConfig(pickupType)
+				local config = self:GetPickupConfig(normalizedType)
 				if config then
 					table.insert(pickupSpawnPoints, {
 						Part = child,
-						Type = pickupType,
+						Type = normalizedType,  -- Store normalized type
 						Position = child.Position,
 						Active = false, -- Track if pickup is currently spawned
 						SpawnId = nil -- Track which pickup is at this point
 					})
-					print("Found pickup spawn point:", pickupType, "at", tostring(child.Position))
+					print("✓ Found pickup spawn point:", normalizedType, "at", tostring(child.Position))
 				else
-					warn("Invalid pickup type in spawn point name:", pickupType)
-					warn("Available types: Health Pack, Medical Kit, Adrenaline, Light Armor, Heavy Armor, Riot Armor, etc.")
+					warn("Invalid pickup type in spawn point name:", pickupType, "-> normalized to:", normalizedType)
+					warn("Available types: Health Pack, Medical Kit, Adrenaline, Light Armor, Heavy Armor, Riot Armor, Pistol Ammo, Rifle Ammo, etc.")
 				end
 			elseif child:IsA("Folder") or child:IsA("Model") then
 				-- Recursively scan folders
